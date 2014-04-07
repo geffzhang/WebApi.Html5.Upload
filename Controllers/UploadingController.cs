@@ -10,43 +10,40 @@ using System.Web.Mvc;
 using System.Web;
 using WebApi.Html5.Upload.Models;
 using WebApi.Html5.Upload.Infrastructure;
+using System.Collections.Specialized;
+using System.Threading;
+using System.Collections.ObjectModel;
 
 namespace WebApi.Html5.Upload.Controllers
 {
+    //http://www.cnblogs.com/Kummy/p/3553799.html
+    //http://www.cnblogs.com/ang/archive/2012/10/24/2634176.html
+    //http://www.strathweb.com/2012/09/dealing-with-large-files-in-asp-net-web-api/
+    //http://www.cnblogs.com/jacksonwj/p/3525247.html
     public class UploadingController : ApiController
     {
-        public Task<IEnumerable<FileDesc>> Post()
+        public async Task<HttpResponseMessage> Post()
         {
             string folderName = "uploads";
-            string PATH = HttpContext.Current.Server.MapPath("~/"+folderName);
+            string PATH = HttpContext.Current.Server.MapPath("~/" + folderName);
             string rootUrl = Request.RequestUri.AbsoluteUri.Replace(Request.RequestUri.AbsolutePath, String.Empty);
-
             if (Request.Content.IsMimeMultipartContent())
             {
                 var streamProvider = new CustomMultipartFormDataStreamProvider(PATH);
-                var task = Request.Content.ReadAsMultipartAsync(streamProvider).ContinueWith<IEnumerable<FileDesc>>(t =>
-                {
+                //IEnumerable<FileDesc> fileInfos = null;
+                await Request.Content.ReadAsMultipartAsync(streamProvider);
+                var fileInfo = streamProvider.FileData.Select(i =>
+                   {
+                       var info = new FileInfo(i.LocalFileName);
+                       return new FileDesc(info.Name, rootUrl + "/" + folderName + "/" + info.Name, info.Length / 1024);
+                   });
 
-                    if (t.IsFaulted || t.IsCanceled)
-                    {
-                        throw new HttpResponseException(HttpStatusCode.InternalServerError);
-                    }
-
-                    var fileInfo = streamProvider.FileData.Select(i =>
-                    {
-                        var info = new FileInfo(i.LocalFileName);
-                        return new FileDesc(info.Name, rootUrl+"/"+folderName+"/"+info.Name, info.Length / 1024);
-                    });
-                    return fileInfo;
-                });
-
-                return task;
+                return Request.CreateResponse(HttpStatusCode.OK, fileInfo);
             }
             else
             {
                 throw new HttpResponseException(Request.CreateResponse(HttpStatusCode.NotAcceptable, "This request is not properly formatted"));
             }
-
         }
     }
 }
