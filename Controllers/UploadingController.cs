@@ -20,6 +20,7 @@ namespace WebApi.Html5.Upload.Controllers
     //http://www.cnblogs.com/ang/archive/2012/10/24/2634176.html
     //http://www.strathweb.com/2012/09/dealing-with-large-files-in-asp-net-web-api/
     //http://www.cnblogs.com/jacksonwj/p/3525247.html
+    //http://www.tugberkugurlu.com/archive/how-and-where-concurrent-asynchronous-io-with-asp-net-web-api
     public class UploadingController : ApiController
     {
         public async Task<HttpResponseMessage> Post()
